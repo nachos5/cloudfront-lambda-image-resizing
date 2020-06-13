@@ -4,8 +4,7 @@ import { parse } from 'querystring';
 import { S3 } from 'aws-sdk';
 import Sharp from 'sharp';
 
-const s3 = new S3({ signatureVersion: 'v4' });
-const BUCKET = 'sminor';
+const s3 = new S3({ signatureVersion: 'v4', region: 'eu-west-2' });
 
 const handler: Handler<any, Callback> = (event, context, callback) => {
   const { response } = event.Records[0].cf;

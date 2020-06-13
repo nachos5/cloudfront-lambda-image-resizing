@@ -1,8 +1,6 @@
 import { Handler, Callback } from 'aws-lambda';
 import { parse } from 'querystring';
 
-import { Dimension } from './types';
-
 const allowedDimensions: Dimension[] = [
   { width: 100, height: 100 },
   { width: 200, height: 200 },
