@@ -4,22 +4,30 @@ import { parse } from 'querystring';
 import { S3 } from 'aws-sdk';
 import Sharp from 'sharp';
 
-const s3 = new S3({ signatureVersion: 'v4', region: 'eu-west-2' });
+const s3 = new S3({ signatureVersion: 'v4' });
 
 const handler: Handler<any, Callback> = (event, context, callback) => {
+  if (INFO_LOG) console.info('RUNNING ORIGIN-RESPONSE HANDLER');
   const { response } = event.Records[0].cf;
 
-  if (response.status === 404) {
+  console.info(response, response.status);
+
+  // eslint-disable-next-line eqeqeq
+  if (response.status == 404 || response.status == 403) {
     const { request } = event.Records[0].cf;
-    const dimensionParam = parse(request.querystring).d.toString();
+    let dimensionParam = parse(request.querystring).d;
     if (!dimensionParam) {
       callback(null, response);
       return;
     }
+    dimensionParam = dimensionParam.toString();
 
-    // const dimensionMatch = dimensionParam.split('x');
-    const path = request.uri;
-    const key = path.substring(1);
+    const path = decodeURI(request.uri);
+    const key = `${path.substring(1)}`;
+
+    if (INFO_LOG) {
+      console.info(`dimension: ${dimensionParam}, path: ${path}, key: ${key}`);
+    }
 
     let prefix;
     let originalKey;
@@ -35,7 +43,7 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
       width = parseInt(match[2], 10);
       height = parseInt(match[3], 10);
       // correction for jpg required for 'Sharp'
-      requiredFormat = match[4] == 'jpg' ? 'jpeg' : match[4];
+      requiredFormat = match[4] === 'jpg' ? 'jpeg' : match[4];
       imageName = match[5];
       originalKey = `${prefix}/${imageName}`;
     } catch (e) {
@@ -47,6 +55,12 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
       requiredFormat = match[3] === 'jpg' ? 'jpeg' : match[3];
       imageName = match[4];
       originalKey = imageName;
+    }
+
+    if (INFO_LOG) {
+      console.info(
+        `match: ${match}, prefix: ${prefix}, width: ${width}, height: ${height}, reqFormat: ${requiredFormat}, imageName: ${imageName}, originalKey: ${originalKey}`,
+      );
     }
 
     // get the source image file
@@ -73,7 +87,7 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
           // even if there is exception in saving the object we send back the generated
           // image back to viewer below
           .catch(() => {
-            console.log('Exception while writing resized image to bucket');
+            console.error('Exception while writing resized image to bucket');
           });
 
         // generate a binary response with resized image
@@ -86,7 +100,7 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
         callback(null, response);
       })
       .catch((err) => {
-        console.log('Exception while reading source image :%j', err);
+        console.error(`Exception while reading source image: ${err}`);
       });
   } // end of if block checking response statusCode
   else {

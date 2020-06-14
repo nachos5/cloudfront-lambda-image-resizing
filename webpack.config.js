@@ -1,17 +1,10 @@
 require('dotenv').config();
 
 const path = require('path');
-const fs = require('fs');
 const webpack = require('webpack');
+const nodeExternals = require('webpack-node-externals');
 
 const resolve = path.resolve.bind(path, __dirname);
-
-const nodeModules = {};
-fs.readdirSync('node_modules')
-  .filter((item) => ['.bin'].indexOf(item) === -1) // exclude the .bin folder
-  .forEach((mod) => {
-    nodeModules[mod] = 'commonjs ' + mod;
-  });
 
 const entry = {
   'origin-response': './src/origin-response.ts',
@@ -21,10 +14,16 @@ const entry = {
 const output = {
   path: resolve('dist'),
   filename: '[name]/index.js',
-  publicPath: resolve('dist'),
+  library: 'cloudfront-lambda-image-resizing',
+  libraryTarget: 'umd',
 };
 
-const plugins = [new webpack.DefinePlugin({ BUCKET: process.env.BUCKET })];
+const plugins = [
+  new webpack.DefinePlugin({
+    BUCKET: '"' + process.env.BUCKET + '"',
+    INFO_LOG: process.env.INFO_LOG === 'true',
+  }),
+];
 
 const jsRule = {
   test: /\.j(s|sx)$/,
@@ -48,10 +47,11 @@ const config = {
   name: 'cloudfront-lambda-image-resizing',
   entry,
   output,
+  // devtool: 'eval',
   module: { rules },
   plugins,
   resolve: resolve_obj,
-  externals: nodeModules,
+  externals: [nodeExternals()],
 };
 
 module.exports = config;

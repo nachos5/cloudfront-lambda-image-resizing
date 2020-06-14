@@ -16,20 +16,28 @@ const variables = {
 };
 
 const handler: Handler<any, Callback> = (event, context, callback) => {
+  if (INFO_LOG) console.info('RUNNING VIEWER-REQUEST HANDLER');
   const { request } = event.Records[0].cf;
   const { headers } = request;
-  const dimensionParam = parse(request.querystring).d.toString();
+  let dimensionParam = parse(request.querystring).d;
   let fwdUri = request.uri;
-
+  console.info(dimensionParam, fwdUri);
   // if no dimension query, we pass the request
   if (!dimensionParam) {
     callback(null, request);
     return;
   }
+  dimensionParam = dimensionParam.toString();
 
   const dimensionMatch = dimensionParam.split('x');
   let width: number = parseInt(dimensionMatch[0], 10);
   let height: number = parseInt(dimensionMatch[1], 10);
+
+  if (INFO_LOG) {
+    console.info(
+      `dimMatch: ${dimensionMatch}, width: ${width}, height: ${height}`,
+    );
+  }
 
   const match = fwdUri.match(/(.*)\/(.*)\.(.*)/);
   const prefix = match[1];
@@ -49,6 +57,12 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
     height = variables.defaultDimension.height;
   }
 
+  if (INFO_LOG) {
+    console.info(
+      `match: ${match}, prefix: ${prefix}, imageName: ${imageName}, extension: ${extension}, matchFound: ${matchFound}`,
+    );
+  }
+
   // we check if we can use webP
   const accept = headers.accept ? headers.accept[0].value : '';
   const url = [];
@@ -63,6 +77,11 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
 
   fwdUri = url.join('/');
   request.uri = fwdUri;
+
+  if (INFO_LOG) {
+    console.info(`accept: ${accept}, fwdUri: ${fwdUri}`);
+  }
+
   callback(null, request);
 };
 
