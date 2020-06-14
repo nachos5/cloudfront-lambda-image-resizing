@@ -2,12 +2,18 @@ import { Handler, Callback } from 'aws-lambda';
 import { parse } from 'querystring';
 
 const allowedDimensions: Dimension[] = [
-  { width: 100, height: 100 },
-  { width: 200, height: 200 },
-  { width: 300, height: 300 },
-  { width: 400, height: 400 },
+  // 1:1
+  { width: 60, height: 60 },
+  { width: 120, height: 120 },
+  { width: 255, height: 255 },
+  { width: 510, height: 510 },
+  { width: 540, height: 540 },
+  { width: 1080, height: 1080 },
+  // 16:9
+  { width: 1920, height: 1080 },
+  { width: 1280, height: 720 },
 ];
-const defaultDimension: Dimension = { width: 200, height: 200 };
+const defaultDimension: Dimension = { width: 255, height: 255 };
 const variables = {
   allowedDimensions,
   defaultDimension,
