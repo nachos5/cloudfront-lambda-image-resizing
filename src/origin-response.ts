@@ -10,12 +10,11 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
   if (INFO_LOG) console.info('RUNNING ORIGIN-RESPONSE HANDLER');
   const { response } = event.Records[0].cf;
 
-  console.info(response, response.status);
-
   // eslint-disable-next-line eqeqeq
   if (response.status == 404 || response.status == 403) {
     const { request } = event.Records[0].cf;
-    let dimensionParam = parse(request.querystring).d;
+    const qsParse = parse(request.querystring);
+    let dimensionParam = qsParse.d;
     if (!dimensionParam) {
       callback(null, response);
       return;
@@ -64,12 +63,17 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
     }
 
     // get the source image file
+    const useCover = 'cover' in qsParse; // default is contain
     s3.getObject({ Bucket: BUCKET, Key: originalKey })
       .promise()
       // perform the resize operation
       .then((data: any) =>
         Sharp(data.Body)
-          .resize(width, height)
+          .flatten(true)
+          .resize(width, height, {
+            fit: useCover ? Sharp.fit.cover : Sharp.fit.contain,
+            background: { r: 255, g: 255, b: 255, alpha: 1 },
+          })
           .toFormat(requiredFormat)
           .toBuffer(),
       )
@@ -86,8 +90,10 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
           .promise()
           // even if there is exception in saving the object we send back the generated
           // image back to viewer below
-          .catch(() => {
-            console.error('Exception while writing resized image to bucket');
+          .catch((e) => {
+            console.error(
+              `Exception while writing resized image to bucket: ${e}`,
+            );
           });
 
         // generate a binary response with resized image

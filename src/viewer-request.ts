@@ -27,7 +27,6 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
   const { headers } = request;
   let dimensionParam = parse(request.querystring).d;
   let fwdUri = request.uri;
-  console.info(dimensionParam, fwdUri);
   // if no dimension query, we pass the request
   if (!dimensionParam) {
     callback(null, request);

@@ -1,6 +1,6 @@
 # Cloudfront Lambda Image Resizing
 
-I directly followed this, but using Typescript and my own preferences + additons: [article link](https://aws.amazon.com/ko/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/)
+I directly followed this, but using Typescript and my own preferences + additions: [article link](https://aws.amazon.com/ko/blogs/networking-and-content-delivery/resizing-images-with-amazon-cloudfront-lambdaedge-aws-cdn-blog/)
 
 I already had S3 + Cloudfront setup before doing this so your setup might be a bit different.
 template-example.yml is very similar to the template I used, it only creates the Lambda services.
