@@ -25,7 +25,8 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
   if (INFO_LOG) console.info('RUNNING VIEWER-REQUEST HANDLER');
   const { request } = event.Records[0].cf;
   const { headers } = request;
-  let dimensionParam = parse(request.querystring).d;
+  const params = parse(request.querystring);
+  let dimensionParam = params.d;
   let fwdUri = request.uri;
   // if no dimension query, we pass the request
   if (!dimensionParam) {
@@ -33,6 +34,7 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
     return;
   }
   dimensionParam = dimensionParam.toString();
+  const coverParam = params.cover;
 
   const dimensionMatch = dimensionParam.split('x');
   let width: number = parseInt(dimensionMatch[0], 10);
@@ -44,10 +46,10 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
     );
   }
 
-  const match = fwdUri.match(/(.*)\/(.*)\.(.*)/);
-  const prefix = match[1];
-  const imageName = match[2];
-  const extension = match[3];
+  const match: string[] = fwdUri.match(/(.*)\/(.*)\.(.*)/);
+  const prefix: string = match[1];
+  const imageName: string = match[2];
+  const extension: string = match[3];
 
   let matchFound = false;
   for (const dimension of variables.allowedDimensions) {
@@ -77,6 +79,12 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
     url.push(variables.webpExtension);
   } else {
     url.push(extension);
+  }
+  if (typeof coverParam === 'string') {
+    url.push('cover');
+  } else {
+    // contain is default
+    url.push('contain');
   }
   url.push(`${imageName}.${extension}`);
 

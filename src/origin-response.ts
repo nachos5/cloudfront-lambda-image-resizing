@@ -10,49 +10,52 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
   if (INFO_LOG) console.info('RUNNING ORIGIN-RESPONSE HANDLER');
   const { response } = event.Records[0].cf;
 
-  // eslint-disable-next-line eqeqeq
-  if (response.status == 404 || response.status == 403) {
+  if (response.status === '404' || response.status === '403') {
     const { request } = event.Records[0].cf;
-    const qsParse = parse(request.querystring);
-    let dimensionParam = qsParse.d;
+    const params = parse(request.querystring);
+    let dimensionParam = params.d;
     if (!dimensionParam) {
       callback(null, response);
       return;
     }
     dimensionParam = dimensionParam.toString();
 
-    const path = decodeURI(request.uri);
+    // we decode in case of html entities
+    const path: string = decodeURI(request.uri);
     const key = `${path.substring(1)}`;
 
     if (INFO_LOG) {
       console.info(`dimension: ${dimensionParam}, path: ${path}, key: ${key}`);
     }
 
-    let prefix;
-    let originalKey;
-    let match;
+    let prefix: string;
+    let originalKey: string;
+    let match: string[];
     let width: number;
     let height: number;
-    let requiredFormat;
-    let imageName;
+    let requiredFormat: string;
+    let fit: string;
+    let imageName: string;
 
     try {
-      match = key.match(/(.*)\/(\d+)x(\d+)\/(.*)\/(.*)/);
+      match = key.match(/(.*)\/(\d+)x(\d+)\/(.*)\/(.*)\/(.*)/);
       prefix = match[1];
       width = parseInt(match[2], 10);
       height = parseInt(match[3], 10);
-      // correction for jpg required for 'Sharp'
+      // sharp wants jpeg
       requiredFormat = match[4] === 'jpg' ? 'jpeg' : match[4];
-      imageName = match[5];
+      fit = match[5];
+      imageName = match[6];
       originalKey = `${prefix}/${imageName}`;
     } catch (e) {
       // no prefix exists for image
       match = key.match(/(\d+)x(\d+)\/(.*)\/(.*)/);
       width = parseInt(match[1], 10);
       height = parseInt(match[2], 10);
-      // correction for jpg required for 'Sharp'
+      // sharp wants jpeg
       requiredFormat = match[3] === 'jpg' ? 'jpeg' : match[3];
-      imageName = match[4];
+      fit = match[4];
+      imageName = match[5];
       originalKey = imageName;
     }
 
@@ -63,15 +66,16 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
     }
 
     // get the source image file
-    const useCover = 'cover' in qsParse; // default is contain
     s3.getObject({ Bucket: BUCKET, Key: originalKey })
       .promise()
       // perform the resize operation
       .then((data: any) =>
         Sharp(data.Body)
-          .flatten(true)
+          // transparency into white
+          .flatten({ background: { r: 255, g: 255, b: 255, alpha: 1 } })
           .resize(width, height, {
-            fit: useCover ? Sharp.fit.cover : Sharp.fit.contain,
+            fit: fit === 'cover' ? Sharp.fit.cover : Sharp.fit.contain,
+            // white background
             background: { r: 255, g: 255, b: 255, alpha: 1 },
           })
           .toFormat(requiredFormat)
