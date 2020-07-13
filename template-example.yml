@@ -27,7 +27,7 @@ Resources:
       Handler: index.default
       Runtime: nodejs12.x
       MemorySize: 128
-      Timeout: 1
+      Timeout: 2
       Role: !GetAtt EdgeLambdaRole.Arn
 
   ViewerRequestFunctionVersion:
@@ -43,7 +43,7 @@ Resources:
      Handler: index.default
      Runtime: nodejs12.x
      MemorySize: 512
-     Timeout: 5
+     Timeout: 10
      Role: !GetAtt EdgeLambdaRole.Arn
 
   OriginResponseFunctionVersion:
