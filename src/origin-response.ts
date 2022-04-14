@@ -1,13 +1,14 @@
-import { Handler, Callback } from 'aws-lambda';
-import { parse } from 'querystring';
-
-import { S3 } from 'aws-sdk';
-import Sharp from 'sharp';
+import { Callback, Handler } from "aws-lambda";
+import { S3 } from "aws-sdk";
+import { parse } from "querystring";
+import Sharp from "sharp";
 
 const s3 = new S3({ signatureVersion: 'v4' });
 
 const handler: Handler<any, Callback> = (event, context, callback) => {
-  if (INFO_LOG) console.info('RUNNING ORIGIN-RESPONSE HANDLER');
+  if (INFO_LOG) {
+    console.info('RUNNING ORIGIN-RESPONSE HANDLER');
+  }
   const { response } = event.Records[0].cf;
 
   if (response.status === '404' || response.status === '403') {
@@ -78,6 +79,7 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
             // white background
             background: { r: 255, g: 255, b: 255, alpha: 1 },
           })
+          // @ts-ignore
           .toFormat(requiredFormat)
           .toBuffer(),
       )

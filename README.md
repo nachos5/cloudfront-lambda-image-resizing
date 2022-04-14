@@ -9,10 +9,10 @@ Do this (in this order) to create zip packages for the functions:
 
 * create an .env file in the root with the variable BUCKET (your S3 image bucket)
 
-* `npm run build`
+* `yarn build`
 
-* `sudo docker build --tag amazonlinux:nodejs .`
+* `docker build --tag amazonlinux:nodejs .`
 
-* `sudo bash build.sh`
+* `sudo ./build.sh`
 
 After this you should have zip files located under dist/packages which you will need to upload to your code bucket.

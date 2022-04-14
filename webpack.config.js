@@ -4,6 +4,8 @@ const path = require('path');
 const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const resolve = path.resolve.bind(path, __dirname);
 
 const entry = {
@@ -43,6 +45,7 @@ const resolve_obj = {
 };
 
 const config = {
+  mode: isDev ? 'development' : 'production',
   target: 'node',
   name: 'cloudfront-lambda-image-resizing',
   entry,

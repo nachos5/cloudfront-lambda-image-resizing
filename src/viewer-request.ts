@@ -1,5 +1,5 @@
-import { Handler, Callback } from 'aws-lambda';
-import { parse } from 'querystring';
+import { Callback, Handler } from "aws-lambda";
+import { parse } from "querystring";
 
 const allowedDimensions: Dimension[] = [
   // 1:1
@@ -22,7 +22,9 @@ const variables = {
 };
 
 const handler: Handler<any, Callback> = (event, context, callback) => {
-  if (INFO_LOG) console.info('RUNNING VIEWER-REQUEST HANDLER');
+  if (INFO_LOG) {
+    console.info('RUNNING VIEWER-REQUEST HANDLER');
+  }
   const { request } = event.Records[0].cf;
   const { headers } = request;
   const params = parse(request.querystring);
