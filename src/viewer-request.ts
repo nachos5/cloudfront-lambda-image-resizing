@@ -8,7 +8,10 @@ const allowedDimensions: Dimension[] = [
   { width: 255, height: 255 },
   { width: 510, height: 510 },
   { width: 540, height: 540 },
+  { width: 750, height: 750 },
   { width: 1080, height: 1080 },
+  { width: 1200, height: 1200 },
+  { width: 1400, height: 1400 },
   // 16:9
   { width: 1920, height: 1080 },
   { width: 1280, height: 720 },
