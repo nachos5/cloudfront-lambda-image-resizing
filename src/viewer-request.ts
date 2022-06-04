@@ -21,13 +21,18 @@ const variables = {
   allowedDimensions,
   defaultDimension,
   variance: 20,
-  webpExtension: 'webp',
+  webpExtension: "webp",
+};
+
+const debug = (...args: any[]) => {
+  if (INFO_LOG) {
+    console.info(...args);
+  }
 };
 
 const handler: Handler<any, Callback> = (event, context, callback) => {
-  if (INFO_LOG) {
-    console.info('RUNNING VIEWER-REQUEST HANDLER');
-  }
+  debug("RUNNING VIEWER-REQUEST HANDLER");
+
   const { request } = event.Records[0].cf;
   const { headers } = request;
   const params = parse(request.querystring);
@@ -40,65 +45,55 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
   }
   dimensionParam = dimensionParam.toString();
   const coverParam = params.cover;
+  const insideParam = params.inside;
+  const outsideParam = params.outside;
 
-  const dimensionMatch = dimensionParam.split('x');
+  const dimensionMatch = dimensionParam.split("x");
   let width: number = parseInt(dimensionMatch[0], 10);
   let height: number = parseInt(dimensionMatch[1], 10);
 
-  if (INFO_LOG) {
-    console.info(
-      `dimMatch: ${dimensionMatch}, width: ${width}, height: ${height}`,
-    );
-  }
+  debug(`dimMatch: ${dimensionMatch}, width: ${width}, height: ${height}`);
 
   const match: string[] = fwdUri.match(/(.*)\/(.*)\.(.*)/);
-  const prefix: string = match[1];
-  const imageName: string = match[2];
-  const extension: string = match[3];
+  const [_, prefix, imageName, extension] = match;
 
-  let matchFound = false;
-  for (const dimension of variables.allowedDimensions) {
-    if (dimension.width === width && dimension.height === height) {
-      matchFound = true;
-      break;
-    }
-  }
+  const matchFound = variables.allowedDimensions.some(
+    (dimension) => dimension.width === width && dimension.height === height
+  );
   // if we didn't find a match we use the default dimension
   if (!matchFound) {
     width = variables.defaultDimension.width;
     height = variables.defaultDimension.height;
   }
 
-  if (INFO_LOG) {
-    console.info(
-      `match: ${match}, prefix: ${prefix}, imageName: ${imageName}, extension: ${extension}, matchFound: ${matchFound}`,
-    );
-  }
+  debug(
+    `match: ${match}, prefix: ${prefix}, imageName: ${imageName}, extension: ${extension}, matchFound: ${matchFound}`
+  );
 
   // we check if we can use webP
-  const accept = headers.accept ? headers.accept[0].value : '';
-  const url = [];
-  url.push(prefix);
-  url.push(`${width}x${height}`);
-  if (accept.includes(variables.webpExtension)) {
-    url.push(variables.webpExtension);
-  } else {
-    url.push(extension);
-  }
-  if (typeof coverParam === 'string') {
-    url.push('cover');
+  const accept = headers.accept ? headers.accept[0].value : "";
+  const url = [
+    prefix,
+    `${width}x${height}`,
+    accept.includes(variables.webpExtension)
+      ? variables.webpExtension
+      : extension,
+  ];
+  if (typeof coverParam === "string") {
+    url.push("cover");
+  } else if (typeof insideParam === "string") {
+    url.push("inside");
+  } else if (typeof outsideParam === "string") {
+    url.push("outside");
   } else {
     // contain is default
-    url.push('contain');
+    url.push("contain");
   }
   url.push(`${imageName}.${extension}`);
-
-  fwdUri = url.join('/');
+  fwdUri = url.join("/");
   request.uri = fwdUri;
 
-  if (INFO_LOG) {
-    console.info(`accept: ${accept}, fwdUri: ${fwdUri}`);
-  }
+  debug(`accept: ${accept}, fwdUri: ${fwdUri}`);
 
   callback(null, request);
 };

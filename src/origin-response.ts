@@ -3,15 +3,20 @@ import { S3 } from "aws-sdk";
 import { parse } from "querystring";
 import Sharp from "sharp";
 
-const s3 = new S3({ signatureVersion: 'v4' });
+const s3 = new S3({ signatureVersion: "v4" });
+
+const debug = (...args: any[]) => {
+  if (INFO_LOG) {
+    console.info(...args);
+  }
+};
 
 const handler: Handler<any, Callback> = (event, context, callback) => {
-  if (INFO_LOG) {
-    console.info('RUNNING ORIGIN-RESPONSE HANDLER');
-  }
+  debug("RUNNING ORIGIN-RESPONSE HANDLER");
+
   const { response } = event.Records[0].cf;
 
-  if (response.status === '404' || response.status === '403') {
+  if (response.status === "404" || response.status === "403") {
     const { request } = event.Records[0].cf;
     const params = parse(request.querystring);
     let dimensionParam = params.d;
@@ -25,9 +30,7 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
     const path: string = decodeURI(request.uri);
     const key = `${path.substring(1)}`;
 
-    if (INFO_LOG) {
-      console.info(`dimension: ${dimensionParam}, path: ${path}, key: ${key}`);
-    }
+    debug(`dimension: ${dimensionParam}, path: ${path}, key: ${key}`);
 
     let prefix: string;
     let originalKey: string;
@@ -44,7 +47,7 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
       width = parseInt(match[2], 10);
       height = parseInt(match[3], 10);
       // sharp wants jpeg
-      requiredFormat = match[4] === 'jpg' ? 'jpeg' : match[4];
+      requiredFormat = match[4] === "jpg" ? "jpeg" : match[4];
       fit = match[5];
       imageName = match[6];
       originalKey = `${prefix}/${imageName}`;
@@ -54,17 +57,15 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
       width = parseInt(match[1], 10);
       height = parseInt(match[2], 10);
       // sharp wants jpeg
-      requiredFormat = match[3] === 'jpg' ? 'jpeg' : match[3];
+      requiredFormat = match[3] === "jpg" ? "jpeg" : match[3];
       fit = match[4];
       imageName = match[5];
       originalKey = imageName;
     }
 
-    if (INFO_LOG) {
-      console.info(
-        `match: ${match}, prefix: ${prefix}, width: ${width}, height: ${height}, reqFormat: ${requiredFormat}, imageName: ${imageName}, originalKey: ${originalKey}`,
-      );
-    }
+    debug(
+      `match: ${match}, prefix: ${prefix}, width: ${width}, height: ${height}, reqFormat: ${requiredFormat}, imageName: ${imageName}, originalKey: ${originalKey}`
+    );
 
     // get the source image file
     s3.getObject({ Bucket: BUCKET, Key: originalKey })
@@ -75,13 +76,20 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
           // transparency into white
           .flatten({ background: { r: 255, g: 255, b: 255, alpha: 1 } })
           .resize(width, height, {
-            fit: fit === 'cover' ? Sharp.fit.cover : Sharp.fit.contain,
+            fit:
+              fit === "cover"
+                ? Sharp.fit.cover
+                : fit === "inside"
+                ? Sharp.fit.inside
+                : fit === "outside"
+                ? Sharp.fit.outside
+                : Sharp.fit.contain,
             // white background
             background: { r: 255, g: 255, b: 255, alpha: 1 },
           })
           // @ts-ignore
           .toFormat(requiredFormat)
-          .toBuffer(),
+          .toBuffer()
       )
       .then((buffer) => {
         // save the resized object to S3 bucket with appropriate object key.
@@ -89,25 +97,25 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
           Body: buffer,
           Bucket: BUCKET,
           ContentType: `image/${requiredFormat}`,
-          CacheControl: 'max-age=31536000',
+          CacheControl: "max-age=31536000",
           Key: key,
-          StorageClass: 'STANDARD',
+          StorageClass: "STANDARD",
         })
           .promise()
           // even if there is exception in saving the object we send back the generated
           // image back to viewer below
           .catch((e) => {
             console.error(
-              `Exception while writing resized image to bucket: ${e}`,
+              `Exception while writing resized image to bucket: ${e}`
             );
           });
 
         // generate a binary response with resized image
         response.status = 200;
-        response.body = buffer.toString('base64');
-        response.bodyEncoding = 'base64';
-        response.headers['content-type'] = [
-          { key: 'Content-Type', value: `image/${requiredFormat}` },
+        response.body = buffer.toString("base64");
+        response.bodyEncoding = "base64";
+        response.headers["content-type"] = [
+          { key: "Content-Type", value: `image/${requiredFormat}` },
         ];
         callback(null, response);
       })
