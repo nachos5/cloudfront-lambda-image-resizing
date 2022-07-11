@@ -97,7 +97,7 @@ const handler: Handler<any, Callback> = (event, context, callback) => {
           Body: buffer,
           Bucket: BUCKET,
           ContentType: `image/${requiredFormat}`,
-          CacheControl: "max-age=31536000",
+          CacheControl: "public, max-age=31536000",
           Key: key,
           StorageClass: "STANDARD",
         })

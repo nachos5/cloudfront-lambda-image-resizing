@@ -6,6 +6,8 @@ const allowedDimensions: Dimension[] = [
   { width: 60, height: 60 },
   { width: 120, height: 120 },
   { width: 255, height: 255 },
+  { width: 360, height: 360 },
+  { width: 420, height: 420 },
   { width: 510, height: 510 },
   { width: 540, height: 540 },
   { width: 750, height: 750 },
@@ -14,6 +16,7 @@ const allowedDimensions: Dimension[] = [
   { width: 1400, height: 1400 },
   // 16:9
   { width: 1920, height: 1080 },
+  { width: 1440, height: 810 },
   { width: 1280, height: 720 },
 ];
 const defaultDimension: Dimension = { width: 255, height: 255 };

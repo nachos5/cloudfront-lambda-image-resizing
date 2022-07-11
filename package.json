@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "build": "rimraf ./dist && webpack --progress --config ./webpack.config.js"
+    "build": "webpack --progress --config ./webpack.config.js"
   },
   "author": "Guðmundur Óli Norland - nachos5",
   "license": "ISC",
